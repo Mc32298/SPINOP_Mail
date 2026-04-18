@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body { 
+      background: transparent !important; 
+      color: white; 
+      font-family: -apple-system, sans-serif; 
+      display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; 
+      overflow: hidden;
+    }
+    .modal-box {
+      background: #1c1c1e; padding: 35px; border-radius: 24px; border: 1px solid rgba(255, 255, 255, 0.1);
+      text-align: center; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5); width: 300px;
+      position: relative;
+    }
+
+    /* --- TUTORIAL TIP STYLE --- */
+    #tutorial-tip {
+    display: none;
+    background: #0A84FF; /* Keeping it Blue */
+    color: white;
+    padding: 12px;
+    border-radius: 14px;
+    font-size: 13px;
+    margin-bottom: 20px;
+    font-weight: 600;
+    box-shadow: 0 4px 15px rgba(10, 132, 255, 0.4);
+    animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    text-align: center;
+  }
+
+    @keyframes popIn {
+      from { opacity: 0; transform: scale(0.9) translateY(-10px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    h2 { font-weight: 500; margin-bottom: 20px; font-size: 22px; }
+    .options { display: grid; grid-template-columns: 1fr; gap: 10px; }
+    
+    button { 
+      background: #2c2c2e; border: 1px solid rgba(255, 255, 255, 0.1); color: white; 
+      padding: 14px; border-radius: 12px; cursor: pointer; transition: all 0.2s; font-weight: 500;
+    }
+    button:hover { background: #3a3a3c; border-color: #0A84FF; }
+    
+    #step-naming { display: none; }
+    input {
+      width: 100%; background: #2c2c2e; border: 1px solid #3a3a3c; border-radius: 10px;
+      padding: 12px; color: white; font-size: 16px; margin-bottom: 20px; box-sizing: border-box; outline: none;
+    }
+    input:focus { border-color: #0A84FF; }
+    .btn-confirm { background: #0A84FF; border: none; width: 100%; color: white; font-weight: 700; }
+  </style>
+</head>
+<body>
+  <div class="modal-box">
+    <div id="tutorial-tip">Step 1: Pick your mail provider below!</div>
+
+    <div id="step-select">
+      <h2>Add Inbox</h2>
+      <div class="options">
+        <button onclick="goToNaming('gmail')">Gmail</button>
+        <button onclick="goToNaming('outlook')">Outlook/Hotmail</button>
+        <button onclick="goToNaming('icloud')">iCloud</button>
+      </div>
+    </div>
+
+    <div id="step-naming">
+      <h2 id="naming-title">Name your Inbox</h2>
+      <input type="text" id="acc-name" placeholder="e.g. Work, Personal..." maxlength="12">
+      <button class="btn-confirm" onclick="finish()">Add to Sidebar</button>
+    </div>
+
+    <div style="margin-top: 20px; font-size: 12px; color: #666; cursor: pointer;" onclick="window.close()">Cancel</div>
+  </div>
+
+  <script>
+    let selectedType = '';
+  
+  // 1. Detect if we are in Tutorial Mode via URL
+  const params = new URLSearchParams(window.location.search);
+  const isTutorial = params.get('tutorial') === 'true';
+  const tipElement = document.getElementById('tutorial-tip');
+
+  if (isTutorial) {
+    tipElement.style.display = 'block';
+  }
+
+  function goToNaming(type) {
+    selectedType = type;
+    
+    document.getElementById('step-select').style.display = 'none';
+    document.getElementById('step-naming').style.display = 'block';
+    
+    // Updated Step 2 text - Background stays blue
+    if (isTutorial) {
+      tipElement.innerText = "Step 2: Give it a name so you can tell your accounts apart!";
+    }
+
+    const input = document.getElementById('acc-name');
+    input.focus();
+    input.value = type.charAt(0).toUpperCase() + type.slice(1);
+  }
+
+  function finish() {
+    const name = document.getElementById('acc-name').value || selectedType;
+    window.mailAPI.addService({ type: selectedType, name: name });
+    window.close();
+  }
+  </script>
+</body>
+</html>
