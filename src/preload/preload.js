@@ -16,7 +16,7 @@ contextBridge.exposeInMainWorld('mailAPI', {
   maximizeApp: () => ipcRenderer.send('maximize-app'),
   
   onInitAccounts: (cb) => ipcRenderer.on('init-accounts', (e, accs) => cb(accs)),
-  onNewAccount: (cb) => ipcRenderer.on('new-account-added', (e, acc) => cb(acc)),
+  onNewAccount: (cb) => ipcRenderer.on('new-account', (e, acc) => cb(acc)),
   onAccountDeleted: (cb) => ipcRenderer.on('account-deleted', (e, id) => cb(id)),
   onHoverLink: (callback) => ipcRenderer.on('hover-link', (_event, url) => callback(url))
 })

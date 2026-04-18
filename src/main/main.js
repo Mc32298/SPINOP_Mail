@@ -33,7 +33,7 @@ function saveAccount(serviceType, customName) {
   const newAcc = { 
     id: `${serviceType}-${Date.now()}`, 
     type: serviceType, 
-    name: customName, // Use the name from the user
+    name: customName,
     url: SERVICE_MAP[serviceType].url, 
     icon: SERVICE_MAP[serviceType].icon 
   };
@@ -50,11 +50,8 @@ function isSafeUrl(urlString) {
     const host = parsedUrl.hostname;
 
     return (
-      // Google / Gmail Domains
       host === 'google.com' || host.endsWith('.google.com') ||
       host === 'gstatic.com' || host.endsWith('.gstatic.com') ||
-      
-      // Microsoft / Outlook / Hotmail Domains
       host === 'microsoft.com' || host.endsWith('.microsoft.com') ||
       host === 'office.com' || host.endsWith('.office.com') ||
       host === 'office365.com' || host.endsWith('.office365.com') ||
@@ -64,8 +61,6 @@ function isSafeUrl(urlString) {
       host === 'windows.net' || host.endsWith('.windows.net') ||
       host === 'msauth.net' || host.endsWith('.msauth.net') ||
       host === 'msauthimages.net' || host.endsWith('.msauthimages.net') ||
-      
-      // iCloud Domains
       host === 'icloud.com' || host.endsWith('.icloud.com') ||
       host === 'apple.com' || host.endsWith('.apple.com')
     );
@@ -79,13 +74,9 @@ app.commandLine.appendSwitch('enable-web-authentication');
 app.on('session-created', (ses) => {
   if (ses.setWebAuthnHandler) {
     ses.setWebAuthnHandler((details, callback) => {
-      // 'conditional' is the "Autofill" request that triggers on page load.
-      // We cancel it so you don't get an annoying popup the second the page opens.
       if (details.mediation === 'conditional') {
         callback({ action: 'cancel' });
       } else {
-        // 'required' or 'optional' are usually triggered when YOU click a button.
-        // We let these run so you can still log in manually.
         callback({ action: 'run' });
       }
     });
@@ -108,7 +99,10 @@ function createWindow() {
   mainWindow = new BrowserWindow({
     x: state.x, y: state.y, width: state.width, height: state.height,
     frame: false, backgroundColor: '#1c1c1e',
-    webPreferences: { preload: path.join(__dirname, 'preload.js'), sandbox: true }
+    webPreferences: {
+      preload: path.join(__dirname, '../preload/preload.js'), // ✅ src/preload/preload.js
+      sandbox: true
+    }
   });
   state.manage(mainWindow);
   mainWindow.on('resize', updateViewBounds);
@@ -116,7 +110,7 @@ function createWindow() {
   const accounts = getAccounts();
   accounts.forEach(acc => createMailView(acc));
 
-  mainWindow.loadFile('index.html');
+  mainWindow.loadFile(path.join(__dirname, '../renderer/pages/index.html')); // ✅ src/renderer/pages/index.html
   mainWindow.webContents.on('did-finish-load', () => {
     mainWindow.webContents.send('init-accounts', accounts);
   });
@@ -125,7 +119,7 @@ function createWindow() {
 function createMailView(acc) {
   const v = new WebContentsView({
     webPreferences: { 
-      preload: path.join(__dirname, 'mail-preload.js'), 
+      preload: path.join(__dirname, '../preload/mail-preload.js'), // ✅ src/preload/mail-preload.js
       sandbox: false, 
       enableWebAuthn: true,
       partition: `persist:${acc.id}` 
@@ -140,37 +134,24 @@ function createMailView(acc) {
     try {
       const parsed = new URL(url);
       const lowerUrl = url.toLowerCase();
-      
-      // 1. Detect Logout/Signout keywords
       const isLoggingOut = lowerUrl.includes('logout') || lowerUrl.includes('signout');
-      
-      // 2. Detect the iCloud Dashboard (the main "Home" screen)
-      // If we are at the root (/) of iCloud, we want to be at (/mail/)
       const isICloudHome = (parsed.hostname === 'www.icloud.com' && (parsed.pathname === '/' || parsed.pathname === '/setup/'));
-
-      // 3. General landing pages for other services
       const isOtherLanding = 
         (parsed.hostname === 'www.google.com' && parsed.pathname === '/') ||
         (parsed.hostname === 'www.microsoft.com' && parsed.pathname === '/') ||
         (parsed.hostname === 'www.office.com' && parsed.pathname === '/');
 
       if (isLoggingOut || isICloudHome || isOtherLanding) {
-        // If we are already on the correct account URL, don't loop
         if (url === acc.url) return;
-
-        // Small delay to let the session finish clearing before we redirect
         setTimeout(() => {
           if (!v.webContents.isDestroyed()) {
             v.webContents.loadURL(acc.url);
           }
         }, 600);
       }
-    } catch (e) {
-      // Ignore URL parsing errors for non-standard strings
-    }
+    } catch (e) {}
   };
 
-  // 'will-navigate' catches links you click
   v.webContents.on('will-navigate', (event, url) => {
     if (!isSafeUrl(url)) {
       event.preventDefault();
@@ -180,12 +161,8 @@ function createMailView(acc) {
     }
   });
 
-  // 'did-navigate' catches redirects (very important for iCloud logout)
   v.webContents.on('did-navigate', (event, url) => checkLogout(url));
-  
-  // 'did-frame-navigate' catches internal iCloud app switches
   v.webContents.on('did-frame-navigate', (event, url) => checkLogout(url));
-
   v.webContents.on('update-target-url', (e, url) => {
     mainWindow.webContents.send('hover-link', url);
   });
@@ -210,25 +187,29 @@ ipcMain.on('show-context-menu', (event, { id, name }) => {
       label: 'Rename Inbox',
       click: () => {
         const renameWin = new BrowserWindow({
-          width: 350, height: 250, parent: mainWindow, modal: true,
+          width: 450, height: 360, parent: mainWindow, modal: true,
           frame: false, transparent: true, backgroundColor: '#00000000',
-          webPreferences: { preload: path.join(__dirname, 'preload.js') }
+          hasShadow: false,
+          webPreferences: { preload: path.join(__dirname, '../preload/preload.js') } // ✅
         });
-        renameWin.loadURL(`file://${path.join(__dirname, 'rename.html')}?id=${id}&name=${encodeURIComponent(name)}`);
+        renameWin.loadFile(path.join(__dirname, '../renderer/pages/rename.html'), { // ✅
+          query: { id: id, name: name }
+        });
       }
     },
     { type: 'separator' },
     {
       label: 'Delete Inbox',
       click: () => {
-        // Your existing delete logic
         const deleteWin = new BrowserWindow({
-          width: 400, height: 350, parent: mainWindow, modal: true,
+          width: 450, height: 360, parent: mainWindow, modal: true,
           frame: false, resizable: false, transparent: true,
           backgroundColor: '#00000000',
-          webPreferences: { preload: path.join(__dirname, 'preload.js') }
+          webPreferences: { preload: path.join(__dirname, '../preload/preload.js') } // ✅
         });
-        deleteWin.loadURL(`file://${path.join(__dirname, 'delete.html')}?id=${id}&name=${encodeURIComponent(name)}`);
+        deleteWin.loadFile(path.join(__dirname, '../renderer/pages/delete.html'), { // ✅
+          query: { id: id, name: name }
+        });
       }
     }
   ];
@@ -246,24 +227,25 @@ ipcMain.on('load-mail', (e, id) => {
 
 ipcMain.on('open-add-window', (event, isTutorial = false) => {
   const addWin = new BrowserWindow({
-    width: 350, height: 500, parent: mainWindow, modal: true, 
+    width: 450, height: 500, parent: mainWindow, modal: true, 
     frame: false, transparent: true, backgroundColor: '#00000000',
-    webPreferences: { preload: path.join(__dirname, 'preload.js') } 
+    webPreferences: { preload: path.join(__dirname, '../preload/preload.js') } // ✅
   });
-  
-  // We use loadURL instead of loadFile to send the ?tutorial=true flag
-  const addPath = path.join(__dirname, 'add.html');
-  addWin.loadURL(`file://${addPath}?tutorial=${isTutorial}`);
+  addWin.loadFile(path.join(__dirname, '../renderer/pages/add.html'), { // ✅
+    query: { tutorial: String(isTutorial) }
+  });
 });
 
 ipcMain.on('open-delete-window', (event, { id, name }) => {
   const deleteWin = new BrowserWindow({
-    width: 400, height: 350, parent: mainWindow, modal: true,
+    width: 450, height: 360, parent: mainWindow, modal: true,
     frame: false, resizable: false, transparent: true,
     backgroundColor: '#00000000',
-    webPreferences: { preload: path.join(__dirname, 'preload.js') }
+    webPreferences: { preload: path.join(__dirname, '../preload/preload.js') } // ✅
   });
-  deleteWin.loadURL(`file://${path.join(__dirname, 'delete.html')}?id=${id}&name=${encodeURIComponent(name)}`);
+  deleteWin.loadFile(path.join(__dirname, '../renderer/pages/delete.html'), { // ✅
+    query: { id: id, name: name }
+  });
 });
 
 ipcMain.on('delete-account', (event, id) => {
@@ -279,10 +261,10 @@ ipcMain.on('delete-account', (event, id) => {
 });
 
 ipcMain.on('add-service', (e, data) => {
-  const { type, name } = data; // Receive the object from add.html
+  const { type, name } = data;
   const acc = saveAccount(type, name);
   createMailView(acc);
-  mainWindow.webContents.send('new-account-added', acc);
+  mainWindow.webContents.send('new-account', acc);
 });
 
 ipcMain.on('close-app', () => app.quit());

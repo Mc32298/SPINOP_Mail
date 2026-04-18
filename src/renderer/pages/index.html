@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+  <!-- ======================================================================
+       META & TITLE
+       ====================================================================== -->
+  <meta charset="UTF-8">
+  <title>Spinop Mail</title>
+
+  <!-- ======================================================================
+       STYLES
+       ====================================================================== -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,300,0,0" />
+  <link rel="stylesheet" href="../style.css">
+
+</head>
+<body>
+
+  <!-- ======================================================================
+       SIDEBAR
+       ====================================================================== -->
+  <div class="sidebar">
+
+    <!-- Traffic Lights -->
+    <div class="traffic-lights">
+      <div class="light close"></div>
+      <div class="light minimize"></div>
+      <div class="light maximize"></div>
+    </div>
+
+    <!-- Add Inbox -->
+    <button id="btn-add" title="Add Inbox">
+      <span class="material-symbols-outlined">add</span>
+    </button>
+
+    <!-- Feedback -->
+    <button id="btn-feedback" title="Feedback & Suggestions">
+      <span class="material-symbols-outlined">forum</span>
+    </button>
+
+  </div>
+
+  <!-- ======================================================================
+       ONBOARDING OVERLAY
+       ====================================================================== -->
+  <div id="onboarding-overlay" class="onboarding-hidden">
+
+    <div id="onboarding-card" class="onboarding-card">
+
+      <!-- Step 1: Welcome -->
+      <div id="step-1">
+        <span class="material-symbols-outlined logo-icon">shield_lock</span>
+        <h2>Welcome to Spinop Mail</h2>
+        <p>This app is <b>100% open source</b> and stores your data <b>locally</b>. Nothing ever touches our servers.</p>
+        <p>Each inbox runs in a isolated <b>Chromium Sandbox</b>. Spinop cannot see your passwords or read your emails.</p>
+        <button class="onboarding-btn" onclick="nextOnboardingStep(2)">Continue</button>
+      </div>
+
+      <!-- Step 2: Add first inbox -->
+      <div id="step-2" style="display: none;">
+        <h2>Add your first Inbox</h2>
+        <p>Ready to start? Click the <b>+</b> button in the sidebar to add your Gmail, Outlook, or iCloud account.</p>
+        <button class="onboarding-btn" onclick="nextOnboardingStep(3)">Show me where</button>
+      </div>
+
+      <!-- Step 3: Managing inboxes -->
+      <div id="step-delete" style="display: none;">
+        <span class="material-symbols-outlined logo-icon" style="color: #ff5f56;">delete_sweep</span>
+        <h2>Managing Inboxes</h2>
+        <p>To remove or rename an inbox later, simply <b>right-click</b> the icon in the sidebar.</p>
+        <p>This will open the management menu for that specific account.</p>
+        <button class="onboarding-btn" onclick="showFinalThanks()">Got it!</button>
+      </div>
+
+      <!-- Step 4: All set -->
+      <div id="step-final" style="display: none;">
+        <span class="material-symbols-outlined logo-icon" style="color: #27c93f;">check_circle</span>
+        <h2>You're all set!</h2>
+        <p>Thanks for choosing Spinop Mail. We are constantly improving!</p>
+        <p style="font-size: 12px; color: #a1a1a6;">
+          Have suggestions? We take comments on what we can do better.
+          <a href="#" onclick="event.preventDefault(); window.mailAPI.openExternal('https://github.com/Mc32298/Spinophowto')">Feedback</a>
+        </p>
+        <button class="onboarding-btn" onclick="closeOnboarding()">Start Mailing</button>
+      </div>
+
+    </div>
+
+    <!-- Pointer Bubble -->
+    <div id="onboarding-pointer" class="pointer-hidden">
+      <div class="pointer-arrow"></div>
+      Click here to add an inbox!
+    </div>
+
+  </div>
+
+  <!-- ======================================================================
+       SCRIPTS
+       ====================================================================== -->
+  <script src="../renderer.js"></script>
+
+</body>
+</html>
