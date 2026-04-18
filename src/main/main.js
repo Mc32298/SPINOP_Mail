@@ -131,6 +131,7 @@ function createWindow() {
   mainWindow = new BrowserWindow({
     x: state.x, y: state.y, width: state.width, height: state.height,
     frame: false, backgroundColor: '#1c1c1e',
+    icon: path.join(__dirname, '../assets/logo.ico'),
     webPreferences: {
       preload: path.join(__dirname, '../preload/preload.js'),
       sandbox: true,
