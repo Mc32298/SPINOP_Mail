@@ -1,5 +1,4 @@
-const { app, BrowserWindow, WebContentsView, session, shell, ipcMain, Menu, MenuItem } = require('electron');
-// 1. GPU FIX (Keep this at the top)
+const { app, BrowserWindow, WebContentsView, session, shell, ipcMain, Menu, MenuItem, safeStorage } = require('electron'); //// 1. GPU FIX (Keep this at the top)
 app.disableHardwareAcceleration(); 
 
 const path = require('path');
@@ -16,16 +15,50 @@ const SERVICE_MAP = {
   'icloud': { name: 'iCloud', url: 'https://www.icloud.com/mail/', icon: 'cloud' },
 };
 
+function writeConfig(data) {
+  const jsonString = JSON.stringify(data);
+  if (safeStorage.isEncryptionAvailable()) {
+    const encryptedBuffer = safeStorage.encryptString(jsonString);
+    fs.writeFileSync(configPath, encryptedBuffer);
+  } else {
+    // Fallback for systems where encryption isn't supported
+    fs.writeFileSync(configPath, jsonString);
+  }
+}
+
+/**
+ * Reads and decrypts data from the accounts file.
+ */
+function readConfig() {
+  if (!fs.existsSync(configPath)) return null;
+
+  const buffer = fs.readFileSync(configPath);
+  try {
+    // Attempt to decrypt the data
+    const decrypted = safeStorage.decryptString(buffer);
+    return JSON.parse(decrypted);
+  } catch (error) {
+    try {
+      // Fallback: Attempt to read as plain text for migration
+      return JSON.parse(buffer.toString());
+    } catch (e) {
+      console.error('Failed to read config:', e);
+      return null;
+    }
+  }
+}
+
 function getAccounts() {
-  if (!fs.existsSync(configPath)) {
+  const accounts = readConfig();
+  if (!accounts) {
     const initial = [
       { id: 'gmail-default', type: 'gmail', ...SERVICE_MAP['gmail'] },
       { id: 'outlook-default', type: 'outlook', ...SERVICE_MAP['outlook'] }
-    ];
-    fs.writeFileSync(configPath, JSON.stringify(initial));
+    ]; //
+    writeConfig(initial);
     return initial;
   }
-  return JSON.parse(fs.readFileSync(configPath));
+  return accounts;
 }
 
 function saveAccount(serviceType, customName) {
@@ -36,12 +69,11 @@ function saveAccount(serviceType, customName) {
     name: customName,
     url: SERVICE_MAP[serviceType].url, 
     icon: SERVICE_MAP[serviceType].icon 
-  };
-  accounts.push(newAcc);
-  fs.writeFileSync(configPath, JSON.stringify(accounts));
+  }; //
+  accounts.push(newAcc); //
+  writeConfig(accounts);
   return newAcc;
 }
-
 // --- 3. SECURITY WHITE-LIST ---
 function isSafeUrl(urlString) {
   try {
@@ -70,7 +102,7 @@ function isSafeUrl(urlString) {
 }
 
 // --- 4. GLOBAL PASSKEY / 1PASSWORD FIX ---
-app.commandLine.appendSwitch('enable-web-authentication');
+app.commandLine.appendSwitch('enable-web-authentication'); //
 app.on('session-created', (ses) => {
   if (ses.setWebAuthnHandler) {
     ses.setWebAuthnHandler((details, callback) => {
@@ -81,10 +113,10 @@ app.on('session-created', (ses) => {
       }
     });
   }
-});
+}); //
 
-let mainWindow;
-let views = {};
+let mainWindow; //
+let views = {}; //
 
 function updateViewBounds() {
   if (!mainWindow) return;
@@ -92,29 +124,31 @@ function updateViewBounds() {
   Object.values(views).forEach(v => {
     v.setBounds({ x: 100, y: 0, width: b.width - 100, height: b.height });
   });
-}
+} //
 
 function createWindow() {
-  let state = windowStateKeeper({ defaultWidth: 1200, defaultHeight: 800 });
+  let state = windowStateKeeper({ defaultWidth: 1200, defaultHeight: 800 }); //
   mainWindow = new BrowserWindow({
     x: state.x, y: state.y, width: state.width, height: state.height,
     frame: false, backgroundColor: '#1c1c1e',
     webPreferences: {
-      preload: path.join(__dirname, '../preload/preload.js'), // ✅ src/preload/preload.js
-      sandbox: true
+      preload: path.join(__dirname, '../preload/preload.js'),
+      sandbox: true,
+      contextIsolation: true // Ensured security setting
     }
-  });
-  state.manage(mainWindow);
-  mainWindow.on('resize', updateViewBounds);
+  }); //
+  state.manage(mainWindow); //
+  mainWindow.on('resize', updateViewBounds); //
 
   const accounts = getAccounts();
   accounts.forEach(acc => createMailView(acc));
 
-  mainWindow.loadFile(path.join(__dirname, '../renderer/pages/index.html')); // ✅ src/renderer/pages/index.html
+  mainWindow.loadFile(path.join(__dirname, '../renderer/pages/index.html')); //
   mainWindow.webContents.on('did-finish-load', () => {
     mainWindow.webContents.send('init-accounts', accounts);
-  });
+  }); //
 }
+
 
 function createMailView(acc) {
   const v = new WebContentsView({
@@ -122,6 +156,7 @@ function createMailView(acc) {
       preload: path.join(__dirname, '../preload/mail-preload.js'), // ✅ src/preload/mail-preload.js
       sandbox: true, 
       enableWebAuthn: true,
+      contextIsolation: true,
       partition: `persist:${acc.id}` 
     }
   });
@@ -176,7 +211,7 @@ ipcMain.on('update-account-name', (event, { id, newName }) => {
   const index = accounts.findIndex(acc => acc.id === id);
   if (index !== -1) {
     accounts[index].name = newName;
-    fs.writeFileSync(configPath, JSON.stringify(accounts));
+    writeConfig(accounts);
     mainWindow.webContents.send('account-updated', { id, newName });
   }
 });
@@ -190,7 +225,11 @@ ipcMain.on('show-context-menu', (event, { id, name }) => {
           width: 450, height: 360, parent: mainWindow, modal: true,
           frame: false, transparent: true, backgroundColor: '#00000000',
           hasShadow: false,
-          webPreferences: { preload: path.join(__dirname, '../preload/preload.js') } // ✅
+          webPreferences: {
+            preload: path.join(__dirname, '../preload/preload.js'),
+            contextIsolation: true,
+            sandbox: true 
+          } // ✅
         });
         renameWin.loadFile(path.join(__dirname, '../renderer/pages/rename.html'), { // ✅
           query: { id: id, name: name }
@@ -205,7 +244,11 @@ ipcMain.on('show-context-menu', (event, { id, name }) => {
           width: 450, height: 360, parent: mainWindow, modal: true,
           frame: false, resizable: false, transparent: true,
           backgroundColor: '#00000000',
-          webPreferences: { preload: path.join(__dirname, '../preload/preload.js') } // ✅
+          webPreferences: { 
+            preload: path.join(__dirname, '../preload/preload.js'),
+            contextIsolation: true,
+            sandbox: true 
+          } // ✅
         });
         deleteWin.loadFile(path.join(__dirname, '../renderer/pages/delete.html'), { // ✅
           query: { id: id, name: name }
@@ -229,7 +272,12 @@ ipcMain.on('open-add-window', (event, isTutorial = false) => {
   const addWin = new BrowserWindow({
     width: 450, height: 500, parent: mainWindow, modal: true, 
     frame: false, transparent: true, backgroundColor: '#00000000',
-    webPreferences: { preload: path.join(__dirname, '../preload/preload.js') } // ✅
+    webPreferences: { 
+      preload: path.join(__dirname, '../preload/preload.js'),
+      contextIsolation: true,
+      sandbox: true
+    } // ✅
+
   });
   addWin.loadFile(path.join(__dirname, '../renderer/pages/add.html'), { // ✅
     query: { tutorial: String(isTutorial) }
@@ -241,7 +289,11 @@ ipcMain.on('open-delete-window', (event, { id, name }) => {
     width: 450, height: 360, parent: mainWindow, modal: true,
     frame: false, resizable: false, transparent: true,
     backgroundColor: '#00000000',
-    webPreferences: { preload: path.join(__dirname, '../preload/preload.js') } // ✅
+    webPreferences: { 
+      preload: path.join(__dirname, '../preload/preload.js'),
+      contextIsolation: true,
+      sandbox: true 
+    } // ✅
   });
   deleteWin.loadFile(path.join(__dirname, '../renderer/pages/delete.html'), { // ✅
     query: { id: id, name: name }
@@ -251,7 +303,7 @@ ipcMain.on('open-delete-window', (event, { id, name }) => {
 ipcMain.on('delete-account', (event, id) => {
   const accounts = getAccounts();
   const updatedAccounts = accounts.filter(acc => acc.id !== id);
-  fs.writeFileSync(configPath, JSON.stringify(updatedAccounts));
+  writeConfig(updatedAccounts);
   if (views[id]) {
     mainWindow.contentView.removeChildView(views[id]);
     views[id].webContents.destroy();

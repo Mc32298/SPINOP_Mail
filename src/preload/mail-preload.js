@@ -1,19 +1,24 @@
-const { ipcRenderer } = require('electron')
+// src/preload/mail-preload.js
 
-// Listen for mouse movements anywhere inside the email window
+const { contextBridge, ipcRenderer } = require('electron');
+
+// Expose only necessary functions to the mail view renderer
+contextBridge.exposeInMainWorld('mailAPI', {
+  // Wraps the custom hover link IPC for consistent API exposure
+  sendHoverLink: (url) => ipcRenderer.send('custom-hover-link', url)
+});
+
+// Internal event listeners for link hovering behavior
 document.addEventListener('mouseover', (event) => {
-  // Check if the mouse is touching an 'a' (link) tag
-  const link = event.target.closest('a')
+  const link = event.target.closest('a');
   if (link && link.href) {
-    // Send the raw link back to our main process
-    ipcRenderer.send('custom-hover-link', link.href)
+    ipcRenderer.send('custom-hover-link', link.href);
   }
-})
+});
 
-// Clear the bar when the mouse moves away from the link
 document.addEventListener('mouseout', (event) => {
-  const link = event.target.closest('a')
+  const link = event.target.closest('a');
   if (link) {
-    ipcRenderer.send('custom-hover-link', '') 
+    ipcRenderer.send('custom-hover-link', '');
   }
-})
+});
