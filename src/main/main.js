@@ -120,7 +120,7 @@ function createMailView(acc) {
   const v = new WebContentsView({
     webPreferences: { 
       preload: path.join(__dirname, '../preload/mail-preload.js'), // ✅ src/preload/mail-preload.js
-      sandbox: false, 
+      sandbox: true, 
       enableWebAuthn: true,
       partition: `persist:${acc.id}` 
     }
