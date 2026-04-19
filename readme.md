@@ -1,4 +1,4 @@
-# 📬 Spinop Mail
+# 📬 RYZE Mail App
 **The Private Inbox Command Center.**
 
 Spinop Mail is a lightweight, Electron-based desktop application designed to bridge the gap between webmail and native performance. No accounts, no cloud tracking, and no bloat. Just your email, exactly where you need it.
@@ -9,7 +9,7 @@ Spinop Mail is a lightweight, Electron-based desktop application designed to bri
 
 ---
 
-## ✨ Why Spinop Mail?
+## ✨ Why RYZE?
 
 In a world where browsers are bloated and privacy is an afterthought, Spinop Mail returns to the basics. It’s built for users who want a dedicated space for their digital life without the overhead of a standard browser.
 
@@ -72,5 +72,5 @@ Currently, we are focused on desktop environments, but who knows? Maybe in the f
 ### Installation
 1. **Clone the repository**
    ```bash
-   git clone [https://github.com/yourusername/spinop-mail.git](https://github.com/yourusername/spinop-mail.git)
-   cd spinop-mail
+   git clone [https://github.com/yourusername/RYZE.git](https://github.com/yourusername/RYZE.git)
+   cd RYZE
