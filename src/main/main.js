@@ -154,6 +154,8 @@ function createWindow() {
   let state = windowStateKeeper({ defaultWidth: 1200, defaultHeight: 800 });
   mainWindow = new BrowserWindow({
     x: state.x, y: state.y, width: state.width, height: state.height,
+    minWidth: 800,
+    minHeight: 600,
     frame: false, backgroundColor: '#1c1c1e',
     icon: path.join(__dirname, '../assets/logo.ico'),
     webPreferences: {
