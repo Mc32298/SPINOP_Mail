@@ -423,6 +423,17 @@ ipcMain.on('add-service', (event, data) => {
   }
 });
 
+ipcMain.on('update-response', (event, action) => {
+  if (!isTrustedSender(event.sender)) return; // SECURITY FIX: Validate sender
+  if (action === 'download') {
+    autoUpdater.downloadUpdate().catch(err => {
+      console.error('Update download failed:', err.message);
+    });
+  } else if (action === 'restart') {
+    autoUpdater.quitAndInstall();
+  }
+});
+
 ipcMain.on('close-app', (event) => {
   if (!isTrustedSender(event.sender)) return; // SECURITY FIX: Validate sender
   app.quit();
@@ -444,13 +455,40 @@ ipcMain.on('maximize-app', (event) => {
 app.whenReady().then(() => {
   createWindow();
   
-  // Check for updates silently in the background
-  autoUpdater.checkForUpdatesAndNotify();
+  // Check for updates but do not download automatically
+  autoUpdater.autoDownload = false;
+  autoUpdater.checkForUpdates();
+
+  // TEMP TEST: Show the update window 2 seconds after launching
+ // setTimeout(() => showUpdateWindow('available', '2.0.0 (Test)'), 2000);
+});
+
+let updateWin = null;
+function showUpdateWindow(state, version = '') {
+  if (updateWin) return;
+  updateWin = new BrowserWindow({
+    width: 450, height: 360, parent: mainWindow, modal: true,
+    frame: false, resizable: false, transparent: true,
+    backgroundColor: '#00000000',
+    webPreferences: { 
+      preload: path.join(__dirname, '../preload/preload.js'),
+      contextIsolation: true,
+      sandbox: true,
+      nodeIntegration: false
+    }
+  });
+  updateWin.loadFile(path.join(__dirname, '../renderer/pages/update.html'), {
+    query: { state, version }
+  });
+  updateWin.on('closed', () => { updateWin = null; });
+}
+
+autoUpdater.on('update-available', (info) => {
+  showUpdateWindow('available', info.version);
 });
 
 autoUpdater.on('update-downloaded', () => {
-  // Automatically install the update and restart the app when downloaded
-  autoUpdater.quitAndInstall();
+  showUpdateWindow('downloaded');
 });
 
 app.on('window-all-closed', () => {

@@ -14,6 +14,7 @@ contextBridge.exposeInMainWorld('mailAPI', {
   closeApp: () => ipcRenderer.send('close-app'),
   minimizeApp: () => ipcRenderer.send('minimize-app'),
   maximizeApp: () => ipcRenderer.send('maximize-app'),
+  replyUpdate: (action) => ipcRenderer.send('update-response', action),
   
   onInitAccounts: (cb) => ipcRenderer.on('init-accounts', (e, accs) => cb(accs)),
   onNewAccount: (cb) => ipcRenderer.on('new-account', (e, acc) => cb(acc)),
