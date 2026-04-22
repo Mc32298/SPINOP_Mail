@@ -1,4 +1,4 @@
-const { app, BrowserWindow, WebContentsView, session, shell, ipcMain, Menu, MenuItem, safeStorage } = require('electron');
+const { app, BrowserWindow, WebContentsView, session, shell, ipcMain, Menu, MenuItem, safeStorage, dialog } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const windowStateKeeper = require('electron-window-state');
@@ -283,12 +283,13 @@ function createMailView(acc) {
 }
 
 // --- 5. IPC HANDLERS ---
-let aboutWin = null; // Add this outside the handler
+let aboutWin = null; 
 
 ipcMain.on('open-about-window', (event) => {
-  if (!isTrustedSender(event.sender)) return; // SECURITY FIX: Validate sender
+  if (!isTrustedSender(event.sender)) return; 
   
-  const aboutWin = new BrowserWindow({
+  // Notice there is no 'const' here! Just 'aboutWin = ...'
+  aboutWin = new BrowserWindow({
     width: 350, height: 320, parent: mainWindow, modal: true,
     frame: false, resizable: false, transparent: true,
     backgroundColor: '#00000000',
@@ -300,11 +301,12 @@ ipcMain.on('open-about-window', (event) => {
     }
   });
   
-  // Pass the actual app version as a query parameter
   aboutWin.loadFile(path.join(__dirname, '../renderer/pages/about.html'), {
     query: { version: app.getVersion() }
   });
-  aboutWin.on('closed', () => { aboutWin = null; }); //
+
+  // This is what caused the crash if aboutWin was a 'const'
+  aboutWin.on('closed', () => { aboutWin = null; }); 
 });
 
 ipcMain.on('check-for-updates', (event) => {
@@ -535,7 +537,18 @@ autoUpdater.on('checking-for-update', () => {
 
 autoUpdater.on('update-not-available', (info) => {
   console.log('No updates found. App is up to date.');
-  if (aboutWin) {
+  
+  // 1. Show the native pop-up box
+  dialog.showMessageBox({
+    type: 'info',
+    title: 'Up to Date',
+    message: 'RYZE is up to date.',
+    detail: `Version ${app.getVersion()} is the latest version available.`,
+    buttons: ['OK']
+  });
+
+  // 2. Reset the button in the About window
+  if (aboutWin && !aboutWin.isDestroyed()) {
     aboutWin.webContents.send('update-not-available');
   }
 });
