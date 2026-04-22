@@ -460,7 +460,7 @@ app.whenReady().then(() => {
   autoUpdater.checkForUpdates();
 
   // TEMP TEST: Show the update window 2 seconds after launching
- // setTimeout(() => showUpdateWindow('available', '2.0.0 (Test)'), 2000);
+  setTimeout(() => showUpdateWindow('available', '2.0.0 (Test)'), 2000);
 });
 
 let updateWin = null;
