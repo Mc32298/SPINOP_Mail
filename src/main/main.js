@@ -460,6 +460,9 @@ ipcMain.on('maximize-app', (event) => {
 app.whenReady().then(() => {
   createWindow();
   
+  // Enable basic logging for the auto-updater to help debug issues
+  autoUpdater.logger = console;
+
   // Check for updates but do not download automatically
   autoUpdater.autoDownload = false;
   autoUpdater.checkForUpdates();
@@ -493,6 +496,18 @@ autoUpdater.on('update-available', (info) => {
 
 autoUpdater.on('update-downloaded', () => {
   showUpdateWindow('downloaded');
+});
+
+autoUpdater.on('checking-for-update', () => {
+  console.log('Checking GitHub for new releases...');
+});
+
+autoUpdater.on('update-not-available', (info) => {
+  console.log('No updates found. App is up to date.');
+});
+
+autoUpdater.on('error', (err) => {
+  console.error('AutoUpdater Error:', err.message || err);
 });
 
 app.on('window-all-closed', () => {
