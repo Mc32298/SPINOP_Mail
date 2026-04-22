@@ -172,21 +172,22 @@
     <div class="modal-box">
 
       <!-- Tutorial Tip -->
-      <div id="tutorial-tip">Step 1: Pick your mail provider below!</div>
+      <div id="tutorial-tip">Step 1: Pick a service below!</div>
 
       <!-- Step 1: Select service -->
       <div id="step-select">
-        <h2>Add Inbox</h2>
+        <h2>Add Service</h2>
         <div class="options">
           <button onclick="goToNaming('gmail')"><span class="material-symbols-outlined">mail</span> Gmail</button>
           <button onclick="goToNaming('outlook')"><span class="material-symbols-outlined">alternate_email</span> Outlook/Hotmail</button>
           <button onclick="goToNaming('icloud')"><span class="material-symbols-outlined">cloud</span> iCloud</button>
+          <button onclick="goToNaming('notion')"><span class="material-symbols-outlined">article</span> Notion</button>
         </div>
       </div>
 
       <!-- Step 2: Name the inbox -->
       <div id="step-naming">
-        <h2 id="naming-title">Name your Inbox</h2>
+        <h2 id="naming-title">Name your Service</h2>
         <input type="text" id="acc-name" placeholder="e.g. Work, Personal..." maxlength="12">
         <button class="btn-confirm" onclick="finish()">Add to Sidebar</button>
       </div>

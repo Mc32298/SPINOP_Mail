@@ -18,6 +18,7 @@ const SERVICE_MAP = {
   'gmail': { name: 'Gmail', url: 'https://mail.google.com', icon: 'mail' },
   'outlook': { name: 'Outlook/Hotmail', url: 'https://outlook.office.com/mail/', icon: 'alternate_email' },
   'icloud': { name: 'iCloud', url: 'https://www.icloud.com/mail/', icon: 'cloud' },
+  'notion': { name: 'Notion', url: 'https://www.notion.so', icon: 'article' },
 };
 
 function writeConfig(data) {
@@ -100,7 +101,11 @@ function isSafeUrl(urlString) {
       host === 'msauth.net' || host.endsWith('.msauth.net') ||
       host === 'msauthimages.net' || host.endsWith('.msauthimages.net') ||
       host === 'icloud.com' || host.endsWith('.icloud.com') ||
-      host === 'apple.com' || host.endsWith('.apple.com')
+      host === 'apple.com' || host.endsWith('.apple.com') ||
+      host === 'notion.so' || host.endsWith('.notion.so') ||
+      host === 'notion-static.com' || host.endsWith('.notion-static.com') ||
+      host === 'hotmail.com' || host.endsWith('.hotmail.com') ||
+      host === 'msn.com' || host.endsWith('.msn.com')
     );
   } catch (err) {
     return false; 
@@ -130,7 +135,7 @@ app.on('session-created', (ses) => {
 
   // SECURITY FIX: Restrict web permissions to prevent rogue pages from accessing cameras, mics, or location without intent.
   ses.setPermissionRequestHandler((webContents, permission, callback) => {
-    const allowedPermissions = ['notifications']; // Only allow notifications for email clients
+    const allowedPermissions = ['notifications', 'persistent-storage']; // Allow notifications and persistent storage for clients like Outlook
     if (allowedPermissions.includes(permission)) {
       callback(true);
     } else {
@@ -297,7 +302,7 @@ ipcMain.on('show-context-menu', (event, { id, name }) => {
   if (typeof id !== 'string' || typeof name !== 'string') return;
   const template = [
     {
-      label: 'Rename Inbox',
+      label: 'Rename',
       click: () => {
         const renameWin = new BrowserWindow({
           width: 450, height: 360, parent: mainWindow, modal: true,
@@ -316,7 +321,7 @@ ipcMain.on('show-context-menu', (event, { id, name }) => {
     },
     { type: 'separator' },
     {
-      label: 'Delete Inbox',
+      label: 'Delete',
       click: () => {
         const deleteWin = new BrowserWindow({
           width: 450, height: 360, parent: mainWindow, modal: true,
@@ -459,8 +464,7 @@ app.whenReady().then(() => {
   autoUpdater.autoDownload = false;
   autoUpdater.checkForUpdates();
 
-  // TEMP TEST: Show the update window 2 seconds after launching
-  setTimeout(() => showUpdateWindow('available', '2.0.0 (Test)'), 2000);
+  
 });
 
 let updateWin = null;
@@ -493,6 +497,19 @@ autoUpdater.on('update-downloaded', () => {
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
+});
+
+app.on('before-quit', () => {
+  // Force Electron to immediately flush all cookies and LocalStorage (Microsoft auth tokens) to disk before the app exits
+  session.defaultSession.flushStorageData();
+  try {
+    const accounts = getAccounts();
+    if (accounts) {
+      accounts.forEach(acc => {
+        try { session.fromPartition(`persist:${acc.id}`).flushStorageData(); } catch (e) {}
+      });
+    }
+  } catch (err) {}
 });
 
 app.on('activate', () => {

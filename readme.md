@@ -15,7 +15,7 @@ In a world where browsers are bloated and privacy is an afterthought, RYZE Mail 
 
 ### 🚀 Key Features
 - **Zero Account Required:** No "RYZE Account" needed. Your data never leaves your machine.
-- **Dynamic Inbox Management:** Add and remove Gmail, Outlook, iCloud, or Hotmail accounts with a single click.
+- **Dynamic Service Management:** Add and remove Gmail, Outlook, iCloud, Notion, and more with a single click.
 - **Home Base Protection:** Smart logout detection snaps you back to the login screen if you accidentally wander off to a generic landing page.
 - **Security First:** Built from the ground up to prioritize your privacy and data security.
 
@@ -42,7 +42,7 @@ We have big plans for RYZE Mail to make it the ultimate productivity hub. Here i
 
 ### 🌐 More Browser Applications
 We want to expand beyond just email. Future updates will include built-in support for:
-- **Notion** - **Todoist** - **Google Gemini** - And more!
+- **Todoist** - **Google Gemini** - And more!
 
 ### 🎨 Design & Productivity Enhancements
 - **Split View Mode:** View your inbox side-by-side with your calendar, Notion, or Todoist.

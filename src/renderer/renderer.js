@@ -74,11 +74,18 @@ function createSidebarButton(acc) {
   btn.className = 'mail-btn';
   btn.title = acc.name;
   btn.innerHTML = `
+    <span class="delete-inbox-btn material-symbols-outlined" title="Delete ${acc.name}">cancel</span>
     <span class="material-symbols-outlined">${acc.icon}</span>
     <span class="btn-label">${acc.name}</span>
   `;
 
-  btn.addEventListener('click', () => {
+  btn.addEventListener('click', (e) => {
+    // If the delete icon was clicked, open the delete window instead
+    if (e.target.classList.contains('delete-inbox-btn')) {
+      e.stopPropagation();
+      window.mailAPI.openDeleteWindow({ id: acc.id, name: acc.name });
+      return;
+    }
     document.querySelectorAll('.sidebar button').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     window.mailAPI.loadMail(acc.id);
